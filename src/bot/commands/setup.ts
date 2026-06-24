@@ -7,34 +7,47 @@ import {
 import type { GuildSettingsStore } from '../../db/guildSettings.js'
 import {
   isSetupChannelType,
+  resolveSetupTarget,
   SETUP_CHANNEL_TYPES,
-  validateNotificationPermissions,
 } from '../../services/discordNotify.js'
 
 export const setupCommand = new SlashCommandBuilder()
   .setName('setup')
-  .setDescription('Configure the OpenCourseReport notification channel')
+  .setDescription('Configure where OpenCourseReport posts new reports')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
   .addChannelOption((option) =>
     option
       .setName('channel')
-      .setDescription('Text channel or an existing forum thread for new reports')
+      .setDescription(
+        'Text channel, forum channel, or an existing forum post (thread)',
+      )
       .addChannelTypes(...SETUP_CHANNEL_TYPES)
       .setRequired(true),
   )
+  .addStringOption((option) =>
+    option
+      .setName('post')
+      .setDescription(
+        'Name of an existing forum post (required when channel is a forum)',
+      )
+      .setRequired(false),
+  )
 
-function setupConfirmation(channelName: string, channelType: ChannelType): string {
-  const lines = [`Notification target set to ${channelName}.`]
+function setupConfirmation(label: string, isForumPost: boolean): string {
+  const lines = [`Notification target set to ${label}.`]
 
-  if (
-    channelType === ChannelType.PublicThread ||
-    channelType === ChannelType.PrivateThread ||
-    channelType === ChannelType.AnnouncementThread
-  ) {
-    lines.push('', 'New reports will be posted in that **thread**.')
+  if (isForumPost) {
+    lines.push(
+      '',
+      'New reports will be posted as **messages inside that forum post**.',
+    )
   }
 
-  lines.push('', 'Next, configure your area filter:', '`/settings city:YourCity state:OR radius:75`')
+  lines.push(
+    '',
+    'Next, configure your area filter:',
+    '`/settings city:YourCity state:OR radius:75`',
+  )
   return lines.join('\n')
 }
 
@@ -43,6 +56,7 @@ export async function handleSetup(
   store: GuildSettingsStore,
 ): Promise<void> {
   const channelOption = interaction.options.getChannel('channel', true)
+  const postName = interaction.options.getString('post')
   const guild = interaction.guild
   if (!guild) {
     await interaction.reply({
@@ -56,26 +70,29 @@ export async function handleSetup(
   if (!channel || !isSetupChannelType(channel.type)) {
     await interaction.reply({
       content:
-        'Please choose a text channel or an existing thread inside a forum.',
+        'Please choose a text channel, forum channel, or existing forum post.',
       ephemeral: true,
     })
     return
   }
 
-  const me = guild.members.me
-  const permissionError = validateNotificationPermissions(channel, me!)
-  if (permissionError) {
+  const me = guild.members.me!
+  const resolved = await resolveSetupTarget(guild, channel, postName, me)
+  if (!resolved.ok) {
     await interaction.reply({
-      content: permissionError,
+      content: resolved.error,
       ephemeral: true,
     })
     return
   }
 
-  store.setChannel(guild.id, channel.id)
+  store.setChannel(guild.id, resolved.channel.id)
+
+  const isForumPost =
+    resolved.channel.isThread() || channel.type === ChannelType.GuildForum
 
   await interaction.reply({
-    content: setupConfirmation(`${channel}`, channel.type),
+    content: setupConfirmation(resolved.label, isForumPost),
     ephemeral: true,
   })
 }

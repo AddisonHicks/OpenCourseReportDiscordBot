@@ -46,21 +46,27 @@ Requires **Manage Server** permission.
 
 | Command | Description |
 |---------|-------------|
-| `/setup channel:#channel` | Set the notification channel (text channel or existing forum thread) |
+| `/setup channel:#channel post:PostName` | Set target (text channel, forum post, or forum + post name) |
 | `/settings location city:... state:... radius:75` | Set area filter and enable notifications |
 | `/settings view` | Show current settings |
 | `/settings disable` | Pause notifications |
 | `/settings enable` | Resume notifications |
 
-### Forum threads
+### Forum posts
 
-To post into a **single fixed thread** in a forum channel:
+In Discord, each **forum post** is a thread. The bot posts **inside** an existing post — it never creates new forum posts.
 
-1. In Discord, open the forum and create or open the thread you want reports in.
-2. Run `/setup channel:` and select that **thread** (not the forum channel itself).
-3. Ensure the bot role has **Send Messages in Threads** and **Embed Links** in that forum.
+**Option A — pick the forum post directly**
 
-Each new report is posted as a message inside that thread — the bot does not create new threads.
+1. Open the forum post you want reports in.
+2. Run `/setup channel:` and select that **post** (thread).
+
+**Option B — pick the forum + post name**
+
+1. Run `/setup channel:#your-forum post:Course Reports`
+2. `Course Reports` must match an **existing** post title in that forum (create it first).
+
+Required bot permissions in the forum: **View Channel**, **Send Messages in Threads**, **Embed Links**.
 
 ## Environment Variables
 
