@@ -21,14 +21,23 @@ async function main(): Promise<void> {
 
   const client = createBotClient()
   registerGuildJoinHandler(client)
-  registerInteractionHandler(client, store)
+  registerInteractionHandler(
+    client,
+    store,
+    config.DISCORD_TOKEN,
+    config.DISCORD_CLIENT_ID,
+  )
 
-  client.once('ready', () => {
+  client.once('ready', async () => {
     console.log(`Logged in as ${client.user?.tag}`)
+    await registerCommands(
+      config.DISCORD_TOKEN,
+      config.DISCORD_CLIENT_ID,
+      client,
+    )
     startReportListener(supabase, client, store, config.SITE_URL)
   })
 
-  await registerCommands(config.DISCORD_TOKEN, config.DISCORD_CLIENT_ID)
   await client.login(config.DISCORD_TOKEN)
 }
 
