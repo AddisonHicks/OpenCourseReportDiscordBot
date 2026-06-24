@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import WebSocket from 'ws'
 import type { ReportWithCourse } from '../types/report.js'
 
 const REPORT_SELECT = `
@@ -41,6 +42,9 @@ export function createSupabaseClient(
 ): SupabaseClient {
   return createClient(url, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
+    realtime: {
+      transport: WebSocket as unknown as import('@supabase/realtime-js').WebSocketLikeConstructor,
+    },
   })
 }
 
