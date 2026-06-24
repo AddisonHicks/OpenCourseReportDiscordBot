@@ -46,7 +46,8 @@ Requires **Manage Server** permission.
 
 | Command | Description |
 |---------|-------------|
-| `/setup channel:#channel post:PostName` | Set target (text channel, forum post, or forum + post name) |
+| `/setup channel` | Post to a text or announcement channel |
+| `/setup forum-post forum:#forum post:Post Title` | Post inside an existing forum post |
 | `/settings location city:... state:... radius:75` | Set area filter and enable notifications |
 | `/settings view` | Show current settings |
 | `/settings disable` | Pause notifications |
@@ -54,19 +55,20 @@ Requires **Manage Server** permission.
 
 ### Forum posts
 
-In Discord, each **forum post** is a thread. The bot posts **inside** an existing post — it never creates new forum posts.
+Discord’s channel picker **does not list forum posts**. Use the dedicated command:
 
-**Option A — pick the forum post directly**
+```
+/setup forum-post forum:#your-forum post:Course Reports
+```
 
-1. Open the forum post you want reports in.
-2. Run `/setup channel:` and select that **post** (thread).
+- **forum** — pick your forum channel (this *does* appear in the list)
+- **post** — type the **exact title** of an existing forum post (create the post first)
 
-**Option B — pick the forum + post name**
+The bot posts **messages inside** that post. It does not create new forum posts.
 
-1. Run `/setup channel:#your-forum post:Course Reports`
-2. `Course Reports` must match an **existing** post title in that forum (create it first).
+**Text channels:** use `/setup channel` and pick the channel normally.
 
-Required bot permissions in the forum: **View Channel**, **Send Messages in Threads**, **Embed Links**.
+Required bot permissions on the forum: **View Channel**, **Send Messages in Threads**, **Embed Links**.
 
 ## Environment Variables
 
@@ -131,7 +133,7 @@ This posts the most recent report to all configured guilds within radius.
 
 | Step | Command / check |
 |------|-----------------|
-| Channel set | `/setup channel:#channel` |
+| Channel set | `/setup channel` or `/setup forum-post` |
 | Location set | `/settings location city:Athens state:GA radius:75` |
 | Notifications on | `/settings view` shows **Enabled** |
 | Realtime enabled | SQL above run in Supabase |
