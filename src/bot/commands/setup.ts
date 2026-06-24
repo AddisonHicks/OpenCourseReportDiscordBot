@@ -5,6 +5,11 @@ import {
   SlashCommandBuilder,
 } from 'discord.js'
 import type { GuildSettingsStore } from '../../db/guildSettings.js'
+import {
+  isSetupChannelType,
+  SETUP_CHANNEL_TYPES,
+  validateNotificationPermissions,
+} from '../../services/discordNotify.js'
 
 export const setupCommand = new SlashCommandBuilder()
   .setName('setup')
@@ -13,10 +18,25 @@ export const setupCommand = new SlashCommandBuilder()
   .addChannelOption((option) =>
     option
       .setName('channel')
-      .setDescription('Channel where new reports will be posted')
-      .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+      .setDescription('Text channel or an existing forum thread for new reports')
+      .addChannelTypes(...SETUP_CHANNEL_TYPES)
       .setRequired(true),
   )
+
+function setupConfirmation(channelName: string, channelType: ChannelType): string {
+  const lines = [`Notification target set to ${channelName}.`]
+
+  if (
+    channelType === ChannelType.PublicThread ||
+    channelType === ChannelType.PrivateThread ||
+    channelType === ChannelType.AnnouncementThread
+  ) {
+    lines.push('', 'New reports will be posted in that **thread**.')
+  }
+
+  lines.push('', 'Next, configure your area filter:', '`/settings city:YourCity state:OR radius:75`')
+  return lines.join('\n')
+}
 
 export async function handleSetup(
   interaction: ChatInputCommandInteraction,
@@ -33,27 +53,20 @@ export async function handleSetup(
   }
 
   const channel = await guild.channels.fetch(channelOption.id)
-  if (
-    !channel ||
-    (channel.type !== ChannelType.GuildText &&
-      channel.type !== ChannelType.GuildAnnouncement)
-  ) {
+  if (!channel || !isSetupChannelType(channel.type)) {
     await interaction.reply({
-      content: 'Please choose a text channel.',
+      content:
+        'Please choose a text channel or an existing thread inside a forum.',
       ephemeral: true,
     })
     return
   }
 
   const me = guild.members.me
-  const perms = channel.permissionsFor(me!)
-  if (
-    !perms?.has(PermissionFlagsBits.SendMessages) ||
-    !perms?.has(PermissionFlagsBits.EmbedLinks)
-  ) {
+  const permissionError = validateNotificationPermissions(channel, me!)
+  if (permissionError) {
     await interaction.reply({
-      content:
-        'I need **Send Messages** and **Embed Links** permissions in that channel.',
+      content: permissionError,
       ephemeral: true,
     })
     return
@@ -62,12 +75,7 @@ export async function handleSetup(
   store.setChannel(guild.id, channel.id)
 
   await interaction.reply({
-    content: [
-      `Notification channel set to ${channel}.`,
-      '',
-      'Next, configure your area filter:',
-      '`/settings city:YourCity state:OR radius:75`',
-    ].join('\n'),
+    content: setupConfirmation(`${channel}`, channel.type),
     ephemeral: true,
   })
 }

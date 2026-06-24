@@ -15,7 +15,7 @@ Discord bot companion for [OpenCourseReport](https://github.com/AddisonHicks/Ope
    - Create a bot and copy the token
    - Copy the Application ID (`DISCORD_CLIENT_ID`)
    - OAuth2 invite URL scopes: `bot` + `applications.commands`
-   - Bot permissions: Send Messages, Embed Links, Use Slash Commands
+   - Bot permissions: Send Messages, Embed Links, Send Messages in Threads, Use Slash Commands
 
 2. **Supabase access** — service role key from the OpenCourseReport project
 
@@ -46,11 +46,21 @@ Requires **Manage Server** permission.
 
 | Command | Description |
 |---------|-------------|
-| `/setup channel:#channel` | Set the notification channel |
+| `/setup channel:#channel` | Set the notification channel (text channel or existing forum thread) |
 | `/settings location city:... state:... radius:75` | Set area filter and enable notifications |
 | `/settings view` | Show current settings |
 | `/settings disable` | Pause notifications |
 | `/settings enable` | Resume notifications |
+
+### Forum threads
+
+To post into a **single fixed thread** in a forum channel:
+
+1. In Discord, open the forum and create or open the thread you want reports in.
+2. Run `/setup channel:` and select that **thread** (not the forum channel itself).
+3. Ensure the bot role has **Send Messages in Threads** and **Embed Links** in that forum.
+
+Each new report is posted as a message inside that thread — the bot does not create new threads.
 
 ## Environment Variables
 

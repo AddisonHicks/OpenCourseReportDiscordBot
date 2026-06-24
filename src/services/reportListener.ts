@@ -1,4 +1,5 @@
-import type { Client, TextChannel } from 'discord.js'
+import type { Client } from 'discord.js'
+import { sendReportNotification } from './discordNotify.js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { GuildSettingsStore } from '../db/guildSettings.js'
 import { isZipWithinRadius } from './geoFilter.js'
@@ -76,14 +77,7 @@ async function handleNewReport(
 
     try {
       const channel = await client.channels.fetch(settings.channel_id)
-      if (!channel?.isTextBased() || channel.isDMBased()) {
-        console.warn(
-          `Channel ${settings.channel_id} not found or not text-based for guild ${settings.guild_id}`,
-        )
-        continue
-      }
-
-      await (channel as TextChannel).send({ content, embeds, components })
+      await sendReportNotification(channel, { content, embeds, components })
       store.markPosted(settings.guild_id, reportId)
       console.log(
         `Posted report ${reportId} to guild ${settings.guild_id} channel ${settings.channel_id}`,

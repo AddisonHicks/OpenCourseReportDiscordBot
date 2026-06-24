@@ -4,7 +4,7 @@ import { createBotClient } from '../src/bot/client.js'
 import { createSupabaseClient } from '../src/services/supabase.js'
 import { isZipWithinRadius } from '../src/services/geoFilter.js'
 import { buildReportEmbed } from '../src/services/embedBuilder.js'
-import type { TextChannel } from 'discord.js'
+import { sendReportNotification } from '../src/services/discordNotify.js'
 
 async function main(): Promise<void> {
   const config = loadConfig()
@@ -55,12 +55,7 @@ async function main(): Promise<void> {
     if (!inRadius) continue
 
     const channel = await client.channels.fetch(settings.channel_id)
-    if (!channel?.isTextBased() || channel.isDMBased()) {
-      console.error(`Channel ${settings.channel_id} unavailable`)
-      continue
-    }
-
-    await (channel as TextChannel).send({ content, embeds, components })
+    await sendReportNotification(channel, { content, embeds, components })
     store.markPosted(settings.guild_id, report.id)
     console.log(`Posted to channel ${settings.channel_id}`)
   }
